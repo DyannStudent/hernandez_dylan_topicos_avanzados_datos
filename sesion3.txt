@@ -1,0 +1,33 @@
+
+DECLARE
+    v_pedido_id NUMBER := 101; -- Cambia este ID para probar otros casos (102, 103)
+    v_total     NUMBER;
+    v_categoria VARCHAR2(20);
+BEGIN
+    --total del pedido
+    SELECT Total INTO v_total
+    FROM Pedidos
+    WHERE PedidoID = v_pedido_id;
+
+    --clasifica según los criterios
+    IF v_total <= 400 THEN
+        v_categoria := 'BAJO';
+    ELSIF v_total > 400 AND v_total <= 700 THEN
+        v_categoria := 'MEDIO';
+    ELSE
+        v_categoria := 'ALTO';
+    END IF;
+
+    --resultado
+    DBMS_OUTPUT.PUT_LINE('--- Resultado de Clasificación ---');
+    DBMS_OUTPUT.PUT_LINE('Pedido ID: ' || v_pedido_id);
+    DBMS_OUTPUT.PUT_LINE('Monto Total: ' || v_total);
+    DBMS_OUTPUT.PUT_LINE('Categoría: ' || v_categoria);
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('Error: El Pedido ID ' || v_pedido_id || ' no existe.');
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('Ocurrió un error inesperado.');
+END;
+/
