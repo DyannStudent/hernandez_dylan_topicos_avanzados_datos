@@ -1,0 +1,61 @@
+1.-
+
+DECLARE
+    e_precio_insuficiente EXCEPTION;
+    v_producto_id NUMBER := 2;
+    v_precio      NUMBER;
+    v_umbral      NUMBER := 50; 
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('verificando precio del producto... ' || v_producto_id || '...');
+
+    -- obtener precio
+    SELECT Precio INTO v_precio
+    FROM Productos
+    WHERE ProductoID = v_producto_id;
+
+    -- validacion contra el bias
+    IF v_precio < v_umbral THEN
+        RAISE e_precio_insuficiente;
+    END IF;
+
+    DBMS_OUTPUT.PUT_LINE('el precio de ' || v_precio || ' es correcto.');
+
+EXCEPTION
+    WHEN e_precio_insuficiente THEN
+        DBMS_OUTPUT.PUT_LINE('error: el precio (' || v_precio || ') es menor al umbral de ' || v_umbral);
+    
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('error: el producto con ID ' || v_producto_id || ' no existe en la tabla.');
+        
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('error inesperado: ' || SQLERRM);
+END;
+/
+
+
+
+2.-
+DECLARE
+    v_id_duplicado NUMBER := 1;
+    v_nombre       VARCHAR2(50) := 'Nuevo Usuario';
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('intentando insertar cliente con ID: ' || v_id_duplicado);
+
+    -- intento de insercion que violará la restricción PRIMARY KEY
+    INSERT INTO Clientes (ClienteID, Nombre, Ciudad, FechaNacimiento)
+    VALUES (v_id_duplicado, v_nombre, 'Concepción', SYSDATE);
+
+    -- esta línea no se ejecuta si pasa la excepcion
+    COMMIT;
+    DBMS_OUTPUT.PUT_LINE('cliente insertado con éxito.');
+
+EXCEPTION
+    WHEN DUP_VAL_INDEX THEN
+        -- Manejo de la excepción de duplicidad
+        DBMS_OUTPUT.PUT_LINE('ERROR DETECTADO: El ID ' || v_id_duplicado || ' ya está registrado.');
+        DBMS_OUTPUT.PUT_LINE('Sugerencia: Verifique la tabla Clientes o use un ID diferente.');
+        
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('error: ' || SQLERRM);
+END;
+/
