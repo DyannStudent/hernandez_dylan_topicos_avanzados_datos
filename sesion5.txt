@@ -1,0 +1,71 @@
+1.-
+
+DECLARE
+    CURSOR c_productos IS
+        SELECT Nombre, Precio
+        FROM Productos
+        ORDER BY Precio DESC;
+
+    r_prod c_productos%ROWTYPE;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- LISTADO DE PRODUCTOS (ORDENADOS POR PRECIO) ---');
+    
+    -- apertura del cursor
+    OPEN c_productos;
+    LOOP
+        -- extraccion de los datos
+        FETCH c_productos INTO r_prod;
+        EXIT WHEN c_productos%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE('producto: ' || RPAD(r_prod.Nombre, 10) || ' | precio: ' || r_prod.Precio);
+    END LOOP;
+    
+    CLOSE c_productos;
+END;
+/
+
+
+
+2.-
+DECLARE
+    CURSOR c_pedidos_upd (p_pedido_id NUMBER) IS
+        SELECT Total 
+        FROM Pedidos
+        WHERE PedidoID = p_pedido_id
+        FOR UPDATE;
+
+    v_total_orig Pedidos.Total%TYPE;
+    v_total_new  Pedidos.Total%TYPE;
+    v_id_buscado NUMBER := 101;
+BEGIN
+    OPEN c_pedidos_upd(v_id_buscado);
+    FETCH c_pedidos_upd INTO v_total_orig;
+
+    IF c_pedidos_upd%FOUND THEN
+        -- calculo del aumento del 10%
+        v_total_new := v_total_orig * 1.10;
+
+        -- actualiza usando la posicion actual del cursor
+        UPDATE Pedidos 
+        SET Total = v_total_new
+        WHERE CURRENT OF c_pedidos_upd;
+
+        DBMS_OUTPUT.PUT_LINE('actualización exitosa - pedido: ' || v_id_buscado);
+        DBMS_OUTPUT.PUT_LINE('valor original: ' || v_total_orig);
+        DBMS_OUTPUT.PUT_LINE('valor con 10% aumento: ' || v_total_new);
+        
+        COMMIT; 
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('no se encontró el pedido con ID: ' || v_id_buscado);
+    END IF;
+
+    CLOSE c_pedidos_upd;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        IF c_pedidos_upd%ISOPEN THEN
+            CLOSE c_pedidos_upd;
+        END IF;
+        DBMS_OUTPUT.PUT_LINE('error en la actualización: ' || SQLERRM);
+END;
+/
