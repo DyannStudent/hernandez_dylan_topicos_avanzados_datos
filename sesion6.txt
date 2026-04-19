@@ -1,0 +1,88 @@
+0.-
+CREATE OR REPLACE TYPE t_producto_obj AS OBJECT (
+    nombre_prod VARCHAR2(50),
+    precio_prod NUMBER
+);
+/
+
+CREATE OR REPLACE TYPE t_pedido_obj AS OBJECT (
+    id_ped NUMBER,
+    total_ped NUMBER,
+    MEMBER FUNCTION calcular_aumento RETURN NUMBER
+);
+/
+
+CREATE OR REPLACE TYPE BODY t_pedido_obj AS
+    MEMBER FUNCTION calcular_aumento RETURN NUMBER IS
+    BEGIN
+        RETURN SELF.total_ped * 1.10;
+    END;
+END;
+/
+
+
+
+1.-
+
+DECLARE
+    CURSOR c_productos_obj IS
+        SELECT t_producto_obj(nombre, precio)
+        FROM Productos
+        ORDER BY Precio DESC; 
+    v_prod t_producto_obj; 
+BEGIN
+
+    DBMS_OUTPUT.PUT_LINE('//////listado de productos////////');
+    
+    OPEN c_productos_obj;
+    LOOP
+        FETCH c_productos_obj INTO v_prod;
+        EXIT WHEN c_productos_obj%NOTFOUND;
+        
+        --acceso a los atributos del objeto
+        DBMS_OUTPUT.PUT_LINE('producto: ' || v_prod.nombre_prod || ' | precio: $' || v_prod.precio_prod);
+    END LOOP;
+    CLOSE c_productos_obj;
+END;
+/
+
+
+2.-
+DECLARE
+    CURSOR c_pedidos_upd (p_id NUMBER) IS
+        SELECT t_pedido_obj(PedidoID, Total)
+        FROM Pedidos
+        WHERE PedidoID = p_id
+        FOR UPDATE OF Total;
+    v_pedido      t_pedido_obj;
+    v_nuevo_total NUMBER;
+    v_target_id   NUMBER := 103;
+BEGIN
+    OPEN c_pedidos_upd(v_target_id);
+    FETCH c_pedidos_upd INTO v_pedido;
+
+    IF c_pedidos_upd%FOUND THEN
+        --funcion del objeto para el calculo
+        v_nuevo_total := v_pedido.calcular_aumento();
+
+        --actualizacion de la tabla fisica
+        UPDATE Pedidos 
+        SET Total = v_nuevo_total
+        WHERE CURRENT OF c_pedidos_upd;
+
+        DBMS_OUTPUT.PUT_LINE('ID pedido: ' || v_pedido.id_ped);
+        DBMS_OUTPUT.PUT_LINE('valor original: ' || v_pedido.total_ped);
+        DBMS_OUTPUT.PUT_LINE('valor con 10% de aumento: ' || v_nuevo_total);
+        COMMIT;
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('no se encuentra el ID: ' || v_target_id);
+    END IF;
+
+    CLOSE c_pedidos_upd;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        IF c_pedidos_upd%ISOPEN THEN CLOSE c_pedidos_upd; END IF;
+        DBMS_OUTPUT.PUT_LINE('error: ' || SQLERRM);
+END;
+/
