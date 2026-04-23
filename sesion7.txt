@@ -1,0 +1,68 @@
+1.-
+CREATE OR REPLACE PROCEDURE aumentar_precio_producto (
+    p_producto_id IN Productos.ProductoID%TYPE,
+    p_porcentaje  IN NUMBER
+) IS
+    e_producto_no_encontrado EXCEPTION;
+    v_precio_anterior        Productos.Precio%TYPE;
+BEGIN
+    IF p_porcentaje < 0 THEN
+        DBMS_OUTPUT.PUT_LINE('el porcentaje es negativo');
+    END IF;
+
+    -- ejecuta la actualizacion
+    UPDATE Productos
+    SET Precio = Precio * (1 + (p_porcentaje / 100))
+    WHERE ProductoID = p_producto_id;
+
+    DBMS_OUTPUT.PUT_LINE('producto ID: ' || p_producto_id);
+    DBMS_OUTPUT.PUT_LINE('precio anterior: ' || v_precio_anterior);
+    DBMS_OUTPUT.PUT_LINE('nuevo precio aplicado con exito.');
+
+EXCEPTION
+    -- captura el error si el SELECT inicial no encuentra el ID
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('ERROR: el producto ' || p_producto_id || ' no existe en la base de datos.');
+    
+    -- desbordamiento de datos
+    WHEN VALUE_ERROR THEN
+        DBMS_OUTPUT.PUT_LINE('ERROR: Los valores de entrada no tienen el formato correcto.');
+
+    WHEN OTHERS THEN
+        DBMS_OUTPUT.PUT_LINE('ERROR INESPERADO: ' || SQLERRM);
+END;
+/
+
+
+2.-
+CREATE OR REPLACE PROCEDURE contar_pedidos_cliente (
+    p_cliente_id IN  Clientes.ClienteID%TYPE,
+    p_cantidad   OUT NUMBER
+) IS
+    v_existe_cliente NUMBER;
+BEGIN
+    -- ver si cliente existe en la tabla
+    SELECT COUNT(*) INTO v_existe_cliente 
+    FROM Clientes 
+    WHERE ClienteID = p_cliente_id;
+
+    IF v_existe_cliente = 0 THEN
+        DBMS_OUTPUT.PUT_LINE('el cliente no existe.');
+        p_cantidad := 0;
+        RETURN; 
+    END IF;
+
+    -- contar pedidos de cliente
+    SELECT COUNT(PedidoID)
+    INTO p_cantidad
+    FROM Pedidos
+    WHERE ClienteID = p_cliente_id;
+
+    DBMS_OUTPUT.PUT_LINE('consulta hecha para ID: ' || p_cliente_id);
+
+EXCEPTION
+    WHEN OTHERS THEN
+        p_cantidad := 0;
+        DBMS_OUTPUT.PUT_LINE('error al contabilizar: ' || SQLERRM);
+END;
+/
