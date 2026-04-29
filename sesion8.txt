@@ -1,0 +1,192 @@
+                                                                        1.-
+SET SERVEROUTPUT ON;
+DECLARE
+    CURSOR c_pedidos_altos IS
+        SELECT c.Nombre, p.Total
+        FROM Clientes c
+        JOIN Pedidos p ON c.ClienteID = p.ClienteID
+        WHERE p.Total > 500;
+    v_nombre Clientes.Nombre%TYPE;
+    v_total  Pedidos.Total%TYPE;
+BEGIN
+    OPEN c_pedidos_altos;
+    LOOP
+        FETCH c_pedidos_altos INTO v_nombre, v_total;
+        EXIT WHEN c_pedidos_altos%NOTFOUND;
+        DBMS_OUTPUT.PUT_LINE('cliente: ' || v_nombre || ' - total Pedido: ' || v_total);
+    END LOOP;
+    CLOSE c_pedidos_altos;
+END;
+/
+
+2.-
+DECLARE
+    CURSOR c_upd_productos IS
+        SELECT ProductoID, Precio 
+        FROM Productos
+        WHERE Precio < 1000
+        FOR UPDATE OF Precio;
+    v_id   Productos.ProductoID%TYPE;
+    v_pre  Productos.Precio%TYPE;
+BEGIN
+    OPEN c_upd_productos;
+    LOOP
+        FETCH c_upd_productos INTO v_id, v_pre;
+        EXIT WHEN c_upd_productos%NOTFOUND;
+
+        UPDATE Productos 
+        SET Precio = Precio * 1.15
+        WHERE CURRENT OF c_upd_productos; 
+        
+        DBMS_OUTPUT.PUT_LINE('producto ID ' || v_id || ' actualizado.');
+    END LOOP;
+    CLOSE c_upd_productos;
+    COMMIT;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('error en la actualizacion: ' || SQLERRM);
+END;
+/
+
+3.-
+SET SERVEROUTPUT ON;
+DECLARE
+    CURSOR c_clientes_vip IS
+        SELECT c.Nombre, SUM(p.Total) AS Total_Acumulado
+        FROM Clientes c
+        JOIN Pedidos p ON c.ClienteID = p.ClienteID
+        GROUP BY c.Nombre                           
+        HAVING SUM(p.Total) > 1000                  
+        ORDER BY Total_Acumulado DESC;
+
+    v_nombre_cliente Clientes.Nombre%TYPE;
+    v_suma_total     NUMBER;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- clientes con compras superiores a 1000 ---');
+    DBMS_OUTPUT.PUT_LINE('---------------------------------------------');
+
+    OPEN c_clientes_vip;
+
+    LOOP
+        FETCH c_clientes_vip INTO v_nombre_cliente, v_suma_total;
+        
+        EXIT WHEN c_clientes_vip%NOTFOUND;
+
+        DBMS_OUTPUT.PUT_LINE('Cliente: ' || RPAD(v_nombre_cliente, 20) || 
+                             ' | gasto total: $' || TO_CHAR(v_suma_total, '9,999.99'));
+    END LOOP;
+
+    CLOSE c_clientes_vip;
+
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        DBMS_OUTPUT.PUT_LINE('no se encontraron clientes');
+    WHEN OTHERS THEN
+        IF c_clientes_vip%ISOPEN THEN
+            CLOSE c_clientes_vip;
+        END IF;
+        DBMS_OUTPUT.PUT_LINE('error: ' || SQLERRM);
+END;
+/
+
+4.-
+SET SERVEROUTPUT ON;
+
+DECLARE
+    CURSOR c_actualizar_cantidades IS
+        SELECT d.DetalleID, d.Cantidad, p.FechaPedido
+        FROM DetallesPedidos d
+        JOIN Pedidos p ON d.PedidoID = p.PedidoID
+        WHERE p.FechaPedido < TO_DATE('2025-03-02', 'YYYY-MM-DD')
+        FOR UPDATE OF d.Cantidad;
+    v_id_det     DetallesPedidos.DetalleID%TYPE;
+    v_cant_orig  DetallesPedidos.Cantidad%TYPE;
+    v_fecha_ped  Pedidos.FechaPedido%TYPE;
+    v_contador   NUMBER := 0;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- iniciando actualizacion ---');
+    OPEN c_actualizar_cantidades;
+    LOOP
+        FETCH c_actualizar_cantidades INTO v_id_det, v_cant_orig, v_fecha_ped;
+        
+        EXIT WHEN c_actualizar_cantidades%NOTFOUND;
+
+        UPDATE DetallesPedidos
+        SET Cantidad = Cantidad + 1
+        WHERE CURRENT OF c_actualizar_cantidades;
+
+        v_contador := v_contador + 1;
+        DBMS_OUTPUT.PUT_LINE('ID ' || v_id_det || ': cantidad anterior ' || v_cant_orig || 
+                             ' -> nueva cantidad ' || (v_cant_orig + 1));
+    END LOOP;
+
+    CLOSE c_actualizar_cantidades;
+
+    IF v_contador > 0 THEN
+        COMMIT;
+        DBMS_OUTPUT.PUT_LINE('actualizados: ' || v_contador || ' registros.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('no hay pedidos anteriores al 02-Mar-2025.');
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        IF c_actualizar_cantidades%ISOPEN THEN
+            CLOSE c_actualizar_cantidades;
+        END IF;
+        DBMS_OUTPUT.PUT_LINE('error: ' || SQLERRM);
+END;
+/
+
+5.-
+CREATE OR REPLACE TYPE cliente_obj AS OBJECT (
+    cliente_id NUMBER,
+    nombre     VARCHAR2(50),
+    MEMBER FUNCTION get_info RETURN VARCHAR2
+);
+/
+CREATE OR REPLACE TYPE BODY cliente_obj AS
+    MEMBER FUNCTION get_info RETURN VARCHAR2 IS
+    BEGIN
+        RETURN 'CLIENTE DETALLE -> ID: ' || SELF.cliente_id || ' | nombre: ' || UPPER(SELF.nombre);
+    END;
+END;
+/
+
+CREATE TABLE tabla_clientes_obj OF cliente_obj;
+
+INSERT INTO tabla_clientes_obj
+SELECT cliente_obj(ClienteID, Nombre)
+FROM Clientes;
+
+COMMIT;
+--
+SET SERVEROUTPUT ON;
+DECLARE
+    CURSOR c_objetos_cliente IS
+        SELECT VALUE(c) FROM tabla_clientes_obj c;
+    v_instancia_cliente cliente_obj;
+BEGIN
+    DBMS_OUTPUT.PUT_LINE('--- listado de clientes ---');
+    OPEN c_objetos_cliente;
+    LOOP
+        FETCH c_objetos_cliente INTO v_instancia_cliente;
+        
+        EXIT WHEN c_objetos_cliente%NOTFOUND;
+        
+        DBMS_OUTPUT.PUT_LINE(v_instancia_cliente.get_info());
+        
+    END LOOP;
+    
+    CLOSE c_objetos_cliente;
+EXCEPTION
+    WHEN OTHERS THEN
+        IF c_objetos_cliente%ISOPEN THEN
+            CLOSE c_objetos_cliente;
+        END IF;
+        DBMS_OUTPUT.PUT_LINE('error: ' || SQLERRM);
+END;
+/
