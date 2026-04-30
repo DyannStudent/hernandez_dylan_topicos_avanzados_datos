@@ -1,0 +1,57 @@
+1.-
+CREATE OR REPLACE FUNCTION calcular_total_con_descuento (
+    p_pedido_id IN Pedidos.PedidoID%TYPE 
+) RETURN NUMBER IS
+    v_total NUMBER;
+BEGIN
+    SELECT Total INTO v_total 
+    FROM Pedidos 
+    WHERE PedidoID = p_pedido_id;
+
+    IF v_total > 1000 THEN
+        v_total := v_total * 0.90;
+    END IF;
+    RETURN v_total;
+EXCEPTION
+    WHEN NO_DATA_FOUND THEN
+        RETURN -1;
+END;
+/
+CREATE OR REPLACE PROCEDURE aplicar_descuento_pedido (
+    p_pedido_id IN Pedidos.PedidoID%TYPE
+) IS
+    v_nuevo_total NUMBER;
+BEGIN
+    v_nuevo_total := calcular_total_con_descuento(p_pedido_id);
+
+    IF v_nuevo_total != -1 THEN
+        UPDATE Pedidos 
+        SET Total = v_nuevo_total 
+        WHERE PedidoID = p_pedido_id;
+        
+        COMMIT; 
+        DBMS_OUTPUT.PUT_LINE('pedido actualizado: ' || p_pedido_id );
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('el pedido: ' || p_pedido_id || ' no existe.');
+    END IF;
+
+EXCEPTION
+    WHEN OTHERS THEN
+        ROLLBACK;
+        DBMS_OUTPUT.PUT_LINE('error ' || SQLERRM);
+END;
+/
+
+2.-
+
+CREATE OR REPLACE TRIGGER validar_cantidad_detalle
+BEFORE INSERT OR UPDATE ON DetallesPedidos
+FOR EACH ROW 
+BEGIN
+    IF :NEW.Cantidad <= 0 THEN
+        RAISE_APPLICATION_ERROR(-20005, 
+            'la cantidad debe ser mayor a 0: ' || :NEW.Cantidad);
+    END IF;
+    
+END;
+/
