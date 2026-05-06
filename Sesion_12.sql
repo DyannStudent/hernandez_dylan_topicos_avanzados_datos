@@ -1,4 +1,4 @@
-1.-
+--1.-
 CREATE OR REPLACE FUNCTION calcular_total_con_descuento (
     p_pedido_id IN Pedidos.PedidoID%TYPE 
 ) RETURN NUMBER IS
@@ -42,7 +42,7 @@ EXCEPTION
 END;
 /
 
-2.-
+--2.-
 
 CREATE OR REPLACE TRIGGER validar_cantidad_detalle
 BEFORE INSERT OR UPDATE ON DetallesPedidos

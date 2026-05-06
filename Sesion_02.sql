@@ -1,22 +1,22 @@
-1:
+--1:
 SELECT * FROM Clientes;
 
 SELECT Nombre, Ciudad FROM Clientes;
 
-2:
+--2:
 
 SELECT COUNT(*) AS total_clientes FROM Clientes;
 
 SELECT AVG(Total) AS promedio_pedidos FROM Pedidos;
 
-3:
+--3:
 SELECT * FROM Clientes
 WHERE REGEXP_LIKE(Nombre, '^A');
 
 SELECT * FROM Clientes
 WHERE REGEXP_LIKE(Nombre, 'ez$');
 
-4:
+--4:
 CREATE VIEW vista_clientes_santiago AS
 SELECT Nombre, Ciudad
 FROM Clientes

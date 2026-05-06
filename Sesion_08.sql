@@ -1,4 +1,4 @@
-                                                                        1.-
+--1.-
 SET SERVEROUTPUT ON;
 DECLARE
     CURSOR c_pedidos_altos IS
@@ -19,7 +19,7 @@ BEGIN
 END;
 /
 
-2.-
+--2.-
 DECLARE
     CURSOR c_upd_productos IS
         SELECT ProductoID, Precio 
@@ -50,7 +50,7 @@ EXCEPTION
 END;
 /
 
-3.-
+--3.-
 SET SERVEROUTPUT ON;
 DECLARE
     CURSOR c_clientes_vip IS
@@ -91,7 +91,7 @@ EXCEPTION
 END;
 /
 
-4.-
+--4.-
 SET SERVEROUTPUT ON;
 
 DECLARE
@@ -128,7 +128,7 @@ BEGIN
         COMMIT;
         DBMS_OUTPUT.PUT_LINE('actualizados: ' || v_contador || ' registros.');
     ELSE
-        DBMS_OUTPUT.PUT_LINE('no hay pedidos anteriores al 02-Mar-2025.');
+        DBMS_OUTPUT.PUT_LINE('no hay pedidos anteriores al 2 de marzo');
     END IF;
 
 EXCEPTION
@@ -141,7 +141,7 @@ EXCEPTION
 END;
 /
 
-5.-
+--5.-
 CREATE OR REPLACE TYPE cliente_obj AS OBJECT (
     cliente_id NUMBER,
     nombre     VARCHAR2(50),
@@ -163,7 +163,8 @@ SELECT cliente_obj(ClienteID, Nombre)
 FROM Clientes;
 
 COMMIT;
---
+-- ############################
+
 SET SERVEROUTPUT ON;
 DECLARE
     CURSOR c_objetos_cliente IS

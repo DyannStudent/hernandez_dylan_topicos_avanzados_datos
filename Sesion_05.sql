@@ -1,4 +1,4 @@
-1.-
+--1.-
 
 DECLARE
     CURSOR c_productos IS
@@ -8,7 +8,7 @@ DECLARE
 
     r_prod c_productos%ROWTYPE;
 BEGIN
-    DBMS_OUTPUT.PUT_LINE('--- LISTADO DE PRODUCTOS (ORDENADOS POR PRECIO) ---');
+    DBMS_OUTPUT.PUT_LINE('--- LISTADO DE PRODUCTOS ---');
     
     -- apertura del cursor
     OPEN c_productos;
@@ -26,7 +26,7 @@ END;
 
 
 
-2.-
+--2.-
 DECLARE
     CURSOR c_pedidos_upd (p_pedido_id NUMBER) IS
         SELECT Total 

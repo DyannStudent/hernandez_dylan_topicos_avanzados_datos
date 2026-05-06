@@ -1,4 +1,4 @@
-1.-
+--1.-
 CREATE OR REPLACE PROCEDURE aumentar_precio_producto (
     p_producto_id IN Productos.ProductoID%TYPE,
     p_porcentaje  IN NUMBER
@@ -34,7 +34,7 @@ END;
 /
 
 
-2.-
+--2.-
 CREATE OR REPLACE PROCEDURE contar_pedidos_cliente (
     p_cliente_id IN  Clientes.ClienteID%TYPE,
     p_cantidad   OUT NUMBER

@@ -1,4 +1,4 @@
-0.-
+--0.-
 CREATE OR REPLACE TYPE t_producto_obj AS OBJECT (
     nombre_prod VARCHAR2(50),
     precio_prod NUMBER
@@ -22,7 +22,7 @@ END;
 
 
 
-1.-
+--1.-
 
 DECLARE
     CURSOR c_productos_obj IS
@@ -47,7 +47,7 @@ END;
 /
 
 
-2.-
+--2.-
 DECLARE
     CURSOR c_pedidos_upd (p_id NUMBER) IS
         SELECT t_pedido_obj(PedidoID, Total)

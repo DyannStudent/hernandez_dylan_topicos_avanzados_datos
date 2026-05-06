@@ -1,4 +1,4 @@
-1.-
+--1.-
 
 DECLARE
     e_precio_insuficiente EXCEPTION;
@@ -34,7 +34,7 @@ END;
 
 
 
-2.-
+--2.-
 DECLARE
     v_id_duplicado NUMBER := 1;
     v_nombre       VARCHAR2(50) := 'Nuevo Usuario';
@@ -45,7 +45,6 @@ BEGIN
     INSERT INTO Clientes (ClienteID, Nombre, Ciudad, FechaNacimiento)
     VALUES (v_id_duplicado, v_nombre, 'Concepción', SYSDATE);
 
-    -- esta línea no se ejecuta si pasa la excepcion
     COMMIT;
     DBMS_OUTPUT.PUT_LINE('cliente insertado con éxito.');
 
